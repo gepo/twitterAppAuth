@@ -5,12 +5,37 @@ PHP class for Twitter's Application-only authentication model
 --------------
 
 Twitter offers applications the ability to issue authenticated requests on behalf of the application itself (as opposed to on behalf of a specific user).
-As Twitter API 1.1 requires almost all calls to be authenticated getting info from Twitter for your app you need some way to authenticate requests. This class implements this behaviour. 
+As Twitter API 1.1 requires almost all calls to be authenticated getting info from Twitter for your app you need some way to authenticate requests. This class implements this behaviour. This class does not authenticate a user. As Twitter says:
 
-More Info can be found at [https://dev.twitter.com/docs/auth/application-only-auth](https://dev.twitter.com/docs/auth/application-only-auth)
+When issuing requests using application-only auth, there is no concept of a "current user." Therefore, endpoints such as POST statuses/update will not function with application-only auth. See [using OAuth](https://dev.twitter.com/docs/auth/using-oauth) for more information for issuing requests on behalf of a user.
+
+More info can be found at [https://dev.twitter.com/docs/auth/application-only-auth](https://dev.twitter.com/docs/auth/application-only-auth)
+
+Currently only API Call function is ``getUserInfo($username)``. This method is gets a user's information from twitter and acts as an example method.
 
 ```
+// If you run the class first time
+// supply your credentials
 // Example:
 $twitter = new twitterAppAuth();
+
+//set keys 
+$twitter->consumerKey = 'YOUR_KEY';
+$twitter->consumerSecret = 'YOUR_SECRET';
+
+$user = $twitter->getUserInfo('sinantaga');
+```
+
+or if you saved your token from Twitter you can just supply the token. Because a bearer token is valid until you specifically invalidate it.
+
+```
+// If you run the class first time
+// supply your token
+// Example:
+$twitter = new twitterAppAuth();
+
+//set token you already have
+$twitter->setToken('YOUR_BEARER_TOKEN');
+
 $user = $twitter->getUserInfo('sinantaga');
 ```

@@ -25,12 +25,15 @@ class twitterAppAuth {
     const USER_AGENT = 'TwitterAppAuth application-only Auth Class';
 
 
-    public function __construct()
+    public function __construct($token = NULL)
     {
         // TODO:
         // A user token could be already saved in our DB
         // check if it exists. A token will be valid until
         // invalidated by an invalidate request
+        if($token){
+            $this->setToken($token);
+        }
     }
 
     /**
@@ -54,6 +57,11 @@ class twitterAppAuth {
         return json_decode($this->_makeRequest($params, $url));
     }
 
+    public function setToken($token)
+    {
+        $this->_bearerToken = $token;
+    }
+
     /**
     *   Gets the "Bearer access token from twitter"
     */
@@ -62,8 +70,8 @@ class twitterAppAuth {
         // if there is a token already 
         // we dont need to ask Twitter for a new token.
         // The token will be valid until, it is invalidated
-        if ($this->bearerToken) {
-            return;
+        if ($this->_bearerToken) {
+            return $this->_bearerToken;
         }
 
         // From Twitter
@@ -76,21 +84,22 @@ class twitterAppAuth {
         // Concatenate the encoded consumer key, a colon character ":", 
         // and the encoded consumer secret into a single string.
         // Base64 encode the string from the previous step.
-        $bearerToken = base64_encode($encodedConsumerKey.':'.$encodedConsumerSecret);
+        $bearerTokenRequest = base64_encode($encodedConsumerKey.':'.$encodedConsumerSecret);
 
         // Parameters for cURL 
         $curlParams = array( 
             'POST /oauth2/token HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
-            'Authorization: Basic ' . $bearerToken . '',
+            'Authorization: Basic ' . $bearerTokenRequest . '',
             'Content-Type: application/x-www-form-urlencoded;charset=UTF-8',
             'Content-Length: 29'
         );
 
         // TODO: check if token type is 'Bearer'
         // and maybe save token to DB for future reference
-        $this->bearerToken = $this->_makeRequest($curlParams, $this->_tokenUrl, 'POST', 'grant_type=client_credentials');
+        $token = $this->_makeRequest($curlParams, $this->_tokenUrl, 'POST', 'grant_type=client_credentials');
+        $this->setToken($token);
     }
 
     /**
