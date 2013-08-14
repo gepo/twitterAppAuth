@@ -1,5 +1,5 @@
 {
-    "name": "defiant/twitter-app-auth",
+    "name": "defiant/twitterAppAuth",
     "type": "library",
     "description": "PHP class for Twitter's Application-only authentication model",
     "homepage": "https://github.com/defiant/twitterAppAuth",

@@ -22,7 +22,7 @@ class twitterAppAuth {
 
     private $_bearerToken = '';
 
-    const USER_AGENT = 'TwitterAppAuth application-only Auth Class';
+    const USER_AGENT = 'TwitterAppAuth v 0.0.2';
 
 
     public function __construct($token = NULL)
