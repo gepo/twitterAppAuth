@@ -51,7 +51,7 @@ class twitterAppAuth {
             'GET /1.1/users/show.json?screen_name' . $username . ' HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
-            "Authorization: Bearer ".$this->_bearerToken."",
+            "Authorization: Bearer ".$this->_getBearerToken()."",
         );
 
         return json_decode($this->_makeRequest($params, $url));
@@ -135,27 +135,26 @@ class twitterAppAuth {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);            // set url to send to
         curl_setopt($ch, CURLOPT_HTTPHEADER, $params);  // set custom headers
-
+        
         if ($type == 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);          // send as post
             if ($postFields) {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields); // post fields to be sent
             }
             curl_setopt($ch, CURLOPT_HEADER, 1);        // send custom headers
-        }      
+        }
         
         curl_setopt($ch, CURLOPT_VERBOSE, $this->debug);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
         $response = curl_exec ($ch);
-
+        
         curl_close($ch); // close curl
         
         if ($response === false ) {
             echo curl_error($ch), '<br>';
             echo curl_errno($ch);
-            die();
         }else{
             return $response;
         }
