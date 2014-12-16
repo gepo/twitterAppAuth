@@ -30,23 +30,39 @@ class Auth {
     /**
     * Gets the information of a user by his username
     * 
-    * @param String $username Twitter username 
-    * @return Array returns the JSON decoded respone
+    * @param string $username Twitter username 
+    * @return array returns the JSON decoded respone
     */
     public function getUserInfo($username)
     {
-        $url = self::API_URL . 'users/show.json?screen_name=' . $username;
+        return $this->get('users/show.json', array('screen_name' => $username));
+    }
 
+    /**
+     * Calls Twitter REST API method (see getUserInfo for example)
+     * 
+     * @param strings $method
+     * @param array $queryParams
+     * @return array
+     */
+    public function get($method, array $queryParams)
+    {
         $params = array( 
-            'GET /1.1/users/show.json?screen_name' . $username . ' HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
             "Authorization: Bearer " . $this->getToken(),
         );
 
-        return json_decode($this->makeRequest($params, $url), true);
+        return json_decode(
+            $this->makeRequest($params, $this->buildUrl($method, $queryParams)),
+            true
+        );
     }
-
+    
+    /**
+     * Returns bearer token for application-only auth (if you need it for external use)
+     * @return string
+     */
     public function getToken()
     {
         if (!$this->token) {
@@ -54,6 +70,17 @@ class Auth {
         }
         
         return $this->token;
+    }
+    
+    protected function buildUrl($method, array $queryParams)
+    {
+        $url = self::API_URL . $method;
+        
+        if ($queryParams) {
+            $url .= '?' . http_build_query($queryParams);
+        }
+
+        return $url;
     }
     
     /**
