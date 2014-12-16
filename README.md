@@ -17,25 +17,17 @@ Currently only API Call function is ``getUserInfo($username)``. This method is g
 // If you run the class first time
 // supply your credentials
 // Example:
-$twitter = new twitterAppAuth();
-
-//set keys 
-$twitter->consumerKey = 'YOUR_KEY';
-$twitter->consumerSecret = 'YOUR_SECRET';
+$twitter = new twitterAppAuth('YOUR_KEY', 'YOUR_SECRET');
 
 $user = $twitter->getUserInfo('sinantaga');
 ```
 
-or if you saved your token from Twitter you can just supply the token. Because a bearer token is valid until you specifically invalidate it.
+or, if you use dependecy injection, like in Symfony2:
 
 ```
-// If you run the class first time
-// supply your token
-// Example:
-$twitter = new twitterAppAuth();
-
-//set token you already have
-$twitter->setToken('YOUR_BEARER_TOKEN');
-
-$user = $twitter->getUserInfo('sinantaga');
+twitter_auth:
+    class: TwitterAppAuth\Auth
+    arguments:
+        - %twitter_consumer_key%
+        - %twitter_consumer_secret%
 ```
