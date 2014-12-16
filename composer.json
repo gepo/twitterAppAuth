@@ -1,13 +1,18 @@
 {
-    "name": "defiant/twitterappauth",
+    "name": "gepo/twitterappauth",
     "type": "library",
     "description": "PHP class for Twitter's Application-only authentication model",
-    "homepage": "https://github.com/defiant/twitterAppAuth",
+    "homepage": "https://github.com/gepo/twitterAppAuth",
     "license": ["MIT"],
     "authors": [
         {
             "name": "Sinan Taga",
             "email": "sinantaga@gmail.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Gennady Telegin",
+            "email": "gtelegin@gmail.com",
             "role": "Developer"
         }
     ],
@@ -15,6 +20,6 @@
         "php": ">=5.3.0"
     },
     "autoload": {
-        "psr-0": {"twitterAppAuth": "src/"}
+        "psr-0": {"TwitterAppAuth": "src/"}
     }
 }

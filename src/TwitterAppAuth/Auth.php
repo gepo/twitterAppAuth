@@ -1,79 +1,66 @@
 <?php
+namespace TwitterAppAuth;
+
 /**
 * PHP class that implements Twitter's Application-only authentication model
 *
 * This class implements Twitter's Application-only authentication model described at {@link hhttps://dev.twitter.com/docs/auth/application-only-auth}
 *
-* @version 0.01
+* @version 0.1
 * @author Sinan Taga
+* @author Gennady Telegin <gtelegin@gmail.com>
 * @license MIT http://opensource.org/licenses/MIT
 */
-class twitterAppAuth {
-
-    public $consumerKey = 'YOUR_CONSUMER_KEY';
-    public $consumerSecret = 'YOUR CONSUMER_KEY';
-    public $debug = false;
-
-    // url to send data to for authentication
-    private $_tokenUrl = 'https://api.twitter.com/oauth2/token';
-
-    // 
-    private $_apiUrl   = 'https://api.twitter.com/1.1/';
-
-    private $_bearerToken = '';
-
+class Auth {
     const USER_AGENT = 'TwitterAppAuth v 0.0.2';
+    
+    const API_URL   = 'https://api.twitter.com/1.1/';
+    const TOKEN_URL = 'https://api.twitter.com/oauth2/token';
 
+    private $consumerKey;
+    private $consumerSecret;
+    private $token = null;
 
-    public function __construct($token = NULL)
+    public function __construct($consumerKey, $consumerSecret)
     {
-        // TODO:
-        // A user token could be already saved in our DB
-        // check if it exists. A token will be valid until
-        // invalidated by an invalidate request
-        if($token){
-            $this->setToken($token);
-        }
+        $this->consumerKey    = $consumerKey;
+        $this->consumerSecret = $consumerSecret;
     }
 
     /**
-    * Sample method to test the Class
-    * Gets the information of a user
+    * Gets the information of a user by his username
     * 
     * @param String $username Twitter username 
     * @return Array returns the JSON decoded respone
     */
     public function getUserInfo($username)
     {
-        $url = $this->_apiUrl . 'users/show.json?screen_name=' . $username;
+        $url = self::API_URL . 'users/show.json?screen_name=' . $username;
 
         $params = array( 
             'GET /1.1/users/show.json?screen_name' . $username . ' HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
-            "Authorization: Bearer ".$this->_getBearerToken()."",
+            "Authorization: Bearer " . $this->getToken(),
         );
 
-        return json_decode($this->_makeRequest($params, $url));
+        return json_decode($this->makeRequest($params, $url), true);
     }
 
-    public function setToken($token)
+    public function getToken()
     {
-        $this->_bearerToken = $token;
+        if (!$this->token) {
+            $this->token = $this->getBearerToken();
+        }
+        
+        return $this->token;
     }
-
+    
     /**
     *   Gets the "Bearer access token from twitter"
     */
-    private function _getBearerToken()
+    private function getBearerToken()
     {
-        // if there is a token already 
-        // we dont need to ask Twitter for a new token.
-        // The token will be valid until, it is invalidated
-        if ($this->_bearerToken) {
-            return $this->_bearerToken;
-        }
-
         // From Twitter
         // URL encode the consumer key and the consumer secret according to RFC 1738. 
         // Note that at the time of writing, this will not actually change the consumer key and secret, 
@@ -96,25 +83,29 @@ class twitterAppAuth {
             'Content-Length: 29'
         );
 
-        // TODO: check if token type is 'Bearer'
-        // and maybe save token to DB for future reference
-        $token = $this->_makeRequest($curlParams, $this->_tokenUrl, 'POST', 'grant_type=client_credentials');
-        $this->setToken($token);
+        $responseBody = $this->makeRequest($curlParams, self::TOKEN_URL, 'POST', 'grant_type=client_credentials');
+        $response = json_decode($responseBody, true);
+        
+        if (!isset($response['token_type']) || $response['token_type'] != 'bearer') {
+            throw new \Exception('Could not get bearer access token');
+        }
+        
+        return $response['access_token'];
     }
 
     /**
     * Invalidated current Bearer token
     */
-    private function _invalidateBearerToken($currentToken)
+    private function invalidateBearerToken($currentToken)
     {
         $encodedConsumerKey    = urlencode($this->consumerKey);
         $encodedConsumerSecret = urlencode($this->consumerSecret);
-        $bearerToken = base64_encode($encodedConsumerKey.':'.$encodedConsumerSecret);
+        
+        $bearerToken = base64_encode($encodedConsumerKey . ':' . $encodedConsumerSecret);
 
-        // url to send data to for authentication
         $url = "https://api.twitter.com/oauth2/invalidate_token"; 
 
-        $headers = array( 
+        $curlParams = array( 
             'POST /oauth2/invalidate_token HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
@@ -124,38 +115,34 @@ class twitterAppAuth {
             'Content-Length: ' . (strlen($currentToken) + 13)
         );
 
-        return $this->_makeRequest($params, $url, 'POST', 'access_token=' . $currentToken);
+        return $this->makeRequest($curlParams, $url, 'POST', 'access_token=' . $currentToken);
     }
 
     /**
     * Wrap the cURL requests
     */
-    private function _makeRequest($params, $url, $type = 'GET', $postFields = '')
+    private function makeRequest($params, $url, $type = 'GET', $postFields = '')
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);            // set url to send to
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $params);  // set custom headers
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $params);
         
         if ($type == 'POST') {
-            curl_setopt($ch, CURLOPT_POST, 1);          // send as post
+            curl_setopt($ch, CURLOPT_POST, 1);
             if ($postFields) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields); // post fields to be sent
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
             }
-            curl_setopt($ch, CURLOPT_HEADER, 1);        // send custom headers
         }
         
-        curl_setopt($ch, CURLOPT_VERBOSE, $this->debug);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $response = curl_exec ($ch);
         
-        curl_close($ch); // close curl
-        
+        curl_close($ch);
         if ($response === false ) {
-            echo curl_error($ch), '<br>';
-            echo curl_errno($ch);
-        }else{
+            throw new \Exception('Curl error[' . curl_errno($ch) . '] ' . curl_error($ch));
+        } else{
             return $response;
         }
     }
