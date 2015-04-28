@@ -13,7 +13,7 @@ namespace TwitterAppAuth;
 */
 class Auth {
     const USER_AGENT = 'TwitterAppAuth v 0.0.2';
-    
+
     const API_URL   = 'https://api.twitter.com/1.1/';
     const TOKEN_URL = 'https://api.twitter.com/oauth2/token';
 
@@ -29,8 +29,8 @@ class Auth {
 
     /**
     * Gets the information of a user by his username
-    * 
-    * @param string $username Twitter username 
+    *
+    * @param string $username Twitter username
     * @return array returns the JSON decoded respone
     */
     public function getUserInfo($username)
@@ -40,14 +40,14 @@ class Auth {
 
     /**
      * Calls Twitter REST API method (see getUserInfo for example)
-     * 
+     *
      * @param strings $method
      * @param array $queryParams
      * @return array
      */
     public function get($method, array $queryParams)
     {
-        $params = array( 
+        $params = array(
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
             "Authorization: Bearer " . $this->getToken(),
@@ -58,7 +58,7 @@ class Auth {
             true
         );
     }
-    
+
     /**
      * Returns bearer token for application-only auth (if you need it for external use)
      * @return string
@@ -68,40 +68,40 @@ class Auth {
         if (!$this->token) {
             $this->token = $this->getBearerToken();
         }
-        
+
         return $this->token;
     }
-    
+
     protected function buildUrl($method, array $queryParams)
     {
         $url = self::API_URL . $method;
-        
+
         if ($queryParams) {
             $url .= '?' . http_build_query($queryParams);
         }
 
         return $url;
     }
-    
+
     /**
     *   Gets the "Bearer access token from twitter"
     */
     private function getBearerToken()
     {
         // From Twitter
-        // URL encode the consumer key and the consumer secret according to RFC 1738. 
-        // Note that at the time of writing, this will not actually change the consumer key and secret, 
+        // URL encode the consumer key and the consumer secret according to RFC 1738.
+        // Note that at the time of writing, this will not actually change the consumer key and secret,
         // but this step should still be performed in case the format of those values changes in the future.
         $encodedConsumerKey    = urlencode($this->consumerKey);
         $encodedConsumerSecret = urlencode($this->consumerSecret);
 
-        // Concatenate the encoded consumer key, a colon character ":", 
+        // Concatenate the encoded consumer key, a colon character ":",
         // and the encoded consumer secret into a single string.
         // Base64 encode the string from the previous step.
         $bearerTokenRequest = base64_encode($encodedConsumerKey.':'.$encodedConsumerSecret);
 
-        // Parameters for cURL 
-        $curlParams = array( 
+        // Parameters for cURL
+        $curlParams = array(
             'POST /oauth2/token HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
@@ -112,11 +112,11 @@ class Auth {
 
         $responseBody = $this->makeRequest($curlParams, self::TOKEN_URL, 'POST', 'grant_type=client_credentials');
         $response = json_decode($responseBody, true);
-        
+
         if (!isset($response['token_type']) || $response['token_type'] != 'bearer') {
             throw new \Exception('Could not get bearer access token');
         }
-        
+
         return $response['access_token'];
     }
 
@@ -127,12 +127,12 @@ class Auth {
     {
         $encodedConsumerKey    = urlencode($this->consumerKey);
         $encodedConsumerSecret = urlencode($this->consumerSecret);
-        
+
         $bearerToken = base64_encode($encodedConsumerKey . ':' . $encodedConsumerSecret);
 
-        $url = "https://api.twitter.com/oauth2/invalidate_token"; 
+        $url = "https://api.twitter.com/oauth2/invalidate_token";
 
-        $curlParams = array( 
+        $curlParams = array(
             'POST /oauth2/invalidate_token HTTP/1.1',
             'Host: api.twitter.com',
             'User-Agent: ' . self::USER_AGENT,
@@ -153,24 +153,25 @@ class Auth {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $params);
-        
+
         if ($type == 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
             if ($postFields) {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
             }
         }
-        
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $response = curl_exec ($ch);
-        
-        curl_close($ch);
+
         if ($response === false ) {
             throw new \Exception('Curl error[' . curl_errno($ch) . '] ' . curl_error($ch));
-        } else{
-            return $response;
         }
+
+        curl_close($ch);
+        
+        return $response;
     }
 }
