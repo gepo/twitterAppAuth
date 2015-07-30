@@ -114,7 +114,7 @@ class Auth {
         $response = json_decode($responseBody, true);
 
         if (!isset($response['token_type']) || $response['token_type'] != 'bearer') {
-            throw new \Exception('Could not get bearer access token');
+            throw new \RuntimeException(sprintf('Could not get bearer access token, got: %s', json_encode($response)));
         }
 
         return $response['access_token'];
@@ -163,15 +163,14 @@ class Auth {
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $response = curl_exec ($ch);
 
         if ($response === false ) {
-            throw new \Exception('Curl error[' . curl_errno($ch) . '] ' . curl_error($ch));
+            throw new \RuntimeException(sprintf('Curl error[%d] %s', curl_errno($ch), curl_error($ch)));
         }
 
         curl_close($ch);
-        
+
         return $response;
     }
 }
